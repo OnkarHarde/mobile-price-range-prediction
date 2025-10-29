@@ -11,15 +11,14 @@ import plotly.express as px
 
 # 🏷️ App Title
 st.title("📱 Mobile Price Range Prediction App")
-st.write("This app predicts mobile phone price ranges using multiple ML models.")
+st.write("Predict mobile price ranges using Logistic Regression, KNN, SVM, and Naive Bayes.")
 
 # 📂 Load Training Data
 train_df = pd.read_csv("train.csv")
-
 st.subheader("🔍 Training Data Preview")
 st.dataframe(train_df.head())
 
-# ✅ Data preparation
+# ✅ Prepare Training Data
 X = train_df.drop("price_range", axis=1)
 y = train_df["price_range"]
 
@@ -35,24 +34,23 @@ models = {
     "Naive Bayes": GaussianNB()
 }
 
-# 📊 Train & Evaluate
+# 📊 Train & Evaluate Models
 accuracies = {}
 for name, model in models.items():
     model.fit(X_train, y_train)
     preds = model.predict(X_val)
     accuracies[name] = accuracy_score(y_val, preds)
 
-# 📈 Display Accuracies
+# 📈 Show Accuracies
 st.subheader("📊 Model Accuracy Comparison")
 acc_df = pd.DataFrame(list(accuracies.items()), columns=["Model", "Accuracy"])
 fig = px.bar(acc_df, x="Model", y="Accuracy", text="Accuracy", color="Model", title="Model Accuracy Comparison")
 st.plotly_chart(fig)
 
-# 🏆 Select best model automatically
+# 🏆 Choose Best Model
 best_model_name = max(accuracies, key=accuracies.get)
 best_model = models[best_model_name]
-
-st.success(f"🏆 Best Model: **{best_model_name}** with Accuracy: {accuracies[best_model_name]:.2f}")
+st.success(f"🏆 Best Model: **{best_model_name}** (Accuracy: {accuracies[best_model_name]:.2f})")
 
 # 📤 Upload Test File
 st.subheader("📁 Upload Test Data")
@@ -63,7 +61,24 @@ if test_file is not None:
     st.write("### ✅ Test Data Preview")
     st.dataframe(test_df.head())
 
-    # 🔮 Predict using best model
+    # 🧩 Ensure same features as training
+    missing_cols = [col for col in X.columns if col not in test_df.columns]
+    extra_cols = [col for col in test_df.columns if col not in X.columns]
+
+    # Drop extra columns if any
+    if extra_cols:
+        st.warning(f"Dropping extra columns: {extra_cols}")
+        test_df = test_df.drop(columns=extra_cols)
+
+    # Add missing columns if any
+    for col in missing_cols:
+        st.warning(f"Adding missing column with default 0: {col}")
+        test_df[col] = 0
+
+    # Reorder columns to match training
+    test_df = test_df[X.columns]
+
+    # 🔮 Predict
     test_scaled = scaler.transform(test_df)
     predictions = best_model.predict(test_scaled)
     test_df["predicted_price_range"] = predictions
@@ -79,5 +94,6 @@ if test_file is not None:
         file_name="predicted_test_data.csv",
         mime="text/csv"
     )
+
 else:
-    st.info("Please upload your test.csv file to see predictions.")
+    st.info("Please upload your test.csv file to generate predictions.")
