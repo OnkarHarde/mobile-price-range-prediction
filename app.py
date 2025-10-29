@@ -14,7 +14,7 @@ st.title("📱 Mobile Price Range Prediction App")
 st.write("This app predicts mobile phone price ranges using multiple ML models.")
 
 # 📂 Load Training Data
-train_df = pd.read_csv("data/train.csv")
+train_df = pd.read_csv("train.csv")
 
 st.subheader("🔍 Training Data Preview")
 st.dataframe(train_df.head())
