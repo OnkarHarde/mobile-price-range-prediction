@@ -13,7 +13,7 @@ import plotly.express as px
 st.title("📱 Mobile Price Range Prediction App")
 st.write("Predict mobile price range using Logistic Regression, KNN, SVM, and Naive Bayes models.")
 
-# 📂 Load Training Data (not uploaded by user)
+# 📂 Load Training Data (local, not uploaded)
 train_df = pd.read_csv("train.csv")
 st.subheader("🔍 Training Data Preview")
 st.dataframe(train_df.head())
@@ -47,7 +47,7 @@ acc_df = pd.DataFrame(list(accuracies.items()), columns=["Model", "Accuracy"])
 fig = px.bar(acc_df, x="Model", y="Accuracy", text="Accuracy", color="Model", title="Model Accuracy Comparison")
 st.plotly_chart(fig)
 
-# 🏆 Choose Best Model
+# 🏆 Best Model Selection
 best_model_name = max(accuracies, key=accuracies.get)
 best_model = models[best_model_name]
 st.success(f"🏆 Best Model: **{best_model_name}** (Accuracy: {accuracies[best_model_name]:.2f})")
@@ -56,6 +56,14 @@ st.success(f"🏆 Best Model: **{best_model_name}** (Accuracy: {accuracies[best_
 st.subheader("🧠 Choose Input Method")
 input_method = st.radio("Select how you want to provide test data:",
                         ("📋 Manually Enter Data", "📁 Upload Test CSV File"))
+
+# Mapping from numeric to readable price range
+price_labels = {
+    0: "💸 Low Price Range",
+    1: "💰 Medium Price Range",
+    2: "💎 High Price Range",
+    3: "🏆 Very High Price Range"
+}
 
 # ✋ Manual Input Form
 def manual_input():
@@ -84,7 +92,7 @@ def manual_input():
     }
     return pd.DataFrame([data])
 
-# 📤 Test File Upload Method
+# 📤 File Upload Method
 def file_upload():
     st.subheader("📁 Upload Test Data File")
     test_file = st.file_uploader("Upload your test.csv file", type=["csv"])
@@ -111,20 +119,21 @@ def file_upload():
         st.info("Please upload a CSV file to continue.")
         return None
 
-# ⚙️ Execute Based on Selection
+# ⚙️ Execution Based on User Choice
 if input_method == "📋 Manually Enter Data":
     input_df = manual_input()
     if st.button("🔮 Predict Price Range"):
         input_scaled = scaler.transform(input_df)
         prediction = best_model.predict(input_scaled)[0]
-        st.success(f"📱 Predicted Price Range: **{prediction}**")
+        label = price_labels[prediction]
+        st.success(f"📱 Predicted Price Range: **{label}**")
 
 elif input_method == "📁 Upload Test CSV File":
     test_df = file_upload()
     if test_df is not None:
         test_scaled = scaler.transform(test_df)
         predictions = best_model.predict(test_scaled)
-        test_df["predicted_price_range"] = predictions
+        test_df["predicted_price_range"] = [price_labels[p] for p in predictions]
 
         st.subheader("📄 Predicted Test Data")
         st.dataframe(test_df.head())
